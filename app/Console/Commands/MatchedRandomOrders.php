@@ -64,23 +64,8 @@ class MatchedRandomOrders extends Command
 
                 $matchedCount++;
 
-
-                Redis::pipeline(function ($pipe) use ($buy, $sell) {
-                    $buyStatus = $buy['amount'] <= 0 ? OrderStatusEnum::MATCHED->value : OrderStatusEnum::OPEN->value;
-                    $pipe->hset("order:{$buy['id']}", 'amount', $buy['amount']);
-                    if ($buyStatus === OrderStatusEnum::MATCHED->value) {
-                        $pipe->zrem('orders:buy', $buy['id']);
-                        $pipe->del("order:{$buy['id']}");
-                    }
-
-                    $sellStatus = $sell['amount'] <= 0 ? OrderStatusEnum::MATCHED->value : OrderStatusEnum::OPEN->value;
-                    $pipe->hset("order:{$sell['id']}", 'amount', $sell['amount']);
-                    if ($sellStatus === OrderStatusEnum::MATCHED->value) {
-                        $pipe->zrem('orders:sell', $sell['id']);
-                        $pipe->del("order:{$sell['id']}");
-                    }
-                });
-
+                $buyStatus = $buy['amount'] <= 0 ? OrderStatusEnum::MATCHED->value : OrderStatusEnum::OPEN->value;
+                $sellStatus = $sell['amount'] <= 0 ? OrderStatusEnum::MATCHED->value : OrderStatusEnum::OPEN->value;
 
                 if ($buy['side'] === OrderTypeEnum::BUY->value) {
                     $records['buy'][$buy['id']] = [
@@ -88,7 +73,7 @@ class MatchedRandomOrders extends Command
                         'user_id' => $buy['user_id'],
                         'price' => $buy['price'],
                         'amount' => $buy['amount'],
-                        'status' => $buy['amount'] <= 0 ? 'matched' : 'open',
+                        'status' => $buyStatus,
                         'side' => OrderTypeEnum::BUY->value
                     ];
                 }
@@ -99,10 +84,26 @@ class MatchedRandomOrders extends Command
                         'user_id' => $sell['user_id'],
                         'price' => $sell['price'],
                         'amount' => $sell['amount'],
-                        'status' => $sell['amount'] <= 0 ? 'matched' : 'open',
+                        'status' => $sellStatus,
                         'side' => OrderTypeEnum::SELL->value
                     ];
                 }
+
+                Redis::pipeline(function ($pipe) use ($buy, $sell,$buyStatus,$sellStatus) {
+
+                    $pipe->hset("order:{$buy['id']}", 'amount', $buy['amount']);
+                    if ($buyStatus === OrderStatusEnum::MATCHED->value) {
+                        $pipe->zrem('orders:buy', $buy['id']);
+                        $pipe->del("order:{$buy['id']}");
+                    }
+
+                    $pipe->hset("order:{$sell['id']}", 'amount', $sell['amount']);
+                    if ($sellStatus === OrderStatusEnum::MATCHED->value) {
+                        $pipe->zrem('orders:sell', $sell['id']);
+                        $pipe->del("order:{$sell['id']}");
+                    }
+                });
+
 
             } else
                 break;
@@ -111,7 +112,7 @@ class MatchedRandomOrders extends Command
         dump($records);
 
         $data = [...$records['buy'], ...$records['sell']];
-        DB::table('orders')->upsert($data,'id',['amount','status']);
+        DB::table('orders')->upsert($data, 'id', ['amount', 'status']);
         unset($records['buy'], $records['sell']);
 
         $duration = round((microtime(true) - $start) * 1000, 2);
