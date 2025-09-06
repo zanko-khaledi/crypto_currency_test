@@ -105,11 +105,15 @@ class MatchedRandomOrders extends Command
                 });
 
 
-            } else
-                break;
+            } else{
+                Redis::zrem('orders:buy', $buy['id']);
+                Redis::del("order:{$buy['id']}");
+
+                continue;
+            }
         }
 
-        dump($records);
+//        dump($records);
 
         $data = [...$records['buy'], ...$records['sell']];
         DB::table('orders')->upsert($data, 'id', ['amount', 'status']);

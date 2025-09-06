@@ -32,7 +32,7 @@ class GenerateRandomOrders extends Command
      */
     public function handle(): void
     {
-        $batch_size = 1000;
+        $batch_size = 1_000;
         $total_random_orders = 1_000_000;
         $faker = \Faker\Factory::create();
         $increased = 0;
