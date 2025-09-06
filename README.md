@@ -14,7 +14,7 @@
    
    php artisan serve #for running server
 ```
-#### if any orders didnt matched rerun the Application
+#### if any orders didnt match rerun the Application
 ```bash
   php artisan rerun-app
 ```

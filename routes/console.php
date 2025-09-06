@@ -13,6 +13,6 @@ Artisan::command('inspire', function () {
 \Illuminate\Support\Facades\Schedule::job(new \App\Jobs\GetCurrenciesPriceJob(new CurrencyService()))
     ->everyThirtySeconds();
 
-\Illuminate\Support\Facades\Schedule::command('app:matched-random-orders')
-    ->everyMinute();
+//\Illuminate\Support\Facades\Schedule::command('app:matched-random-orders')
+//    ->everyMinute();
 
