@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Currencies\CurrencyService;
+use App\Services\Currencies\Drivers\CurrencyServiceInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -12,7 +13,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-
+         $this->app->bind(CurrencyServiceInterface::class,function (){
+             return app(config('currency.drivers.default'));
+         });
     }
 
     /**
